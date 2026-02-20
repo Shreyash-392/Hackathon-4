@@ -104,5 +104,42 @@
     "aiAnalysis": null,
     "createdAt": "2026-02-20T19:50:43.110Z",
     "updatedAt": "2026-02-20T19:50:43.110Z"
+  },
+  {
+    "id": "a29afaa4-bd63-4c84-be36-6f9ef9878747",
+    "trackingId": "CIV-MLVBOGWL-39E7",
+    "title": "damaged road",
+    "description": "Road is damaged",
+    "category": "Roads",
+    "priority": "high",
+    "status": "resolved",
+    "location": {
+      "lat": 31.252391,
+      "lng": 75.7025795,
+      "address": ", ,  - ",
+      "state": "",
+      "district": "",
+      "city": "",
+      "landmark": ""
+    },
+    "photo": "/uploads/1771618108048-5f7b8490.jpeg",
+    "votes": 0,
+    "votedIps": [],
+    "department": null,
+    "statusHistory": [
+      {
+        "status": "pending",
+        "timestamp": "2026-02-20T20:08:28.053Z",
+        "note": "Complaint registered successfully"
+      },
+      {
+        "status": "resolved",
+        "timestamp": "2026-02-20T20:09:02.926Z",
+        "note": "Status updated to resolved"
+      }
+    ],
+    "aiAnalysis": null,
+    "createdAt": "2026-02-20T20:08:28.053Z",
+    "updatedAt": "2026-02-20T20:09:02.926Z"
   }
 ]
