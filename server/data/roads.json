@@ -1,0 +1,90 @@
+[
+  {
+    "id": "R001",
+    "name": "NH-48 Highway Expansion",
+    "location": "Mumbai - Pune Corridor",
+    "status": "ongoing",
+    "progress": 65,
+    "startDate": "2025-03-01",
+    "expectedEnd": "2026-06-30",
+    "contractor": "L&T Infrastructure",
+    "budget": "₹450 Cr"
+  },
+  {
+    "id": "R002",
+    "name": "Ring Road Phase 2",
+    "location": "Bangalore Outer Ring",
+    "status": "sanctioned",
+    "progress": 0,
+    "startDate": "2026-04-01",
+    "expectedEnd": "2028-12-31",
+    "contractor": "TBD",
+    "budget": "₹800 Cr"
+  },
+  {
+    "id": "R003",
+    "name": "Smart City Road Network",
+    "location": "Pune - Hinjewadi",
+    "status": "completed",
+    "progress": 100,
+    "startDate": "2024-01-15",
+    "expectedEnd": "2025-12-01",
+    "contractor": "Shapoorji Pallonji",
+    "budget": "₹200 Cr"
+  },
+  {
+    "id": "R004",
+    "name": "Flyover Bridge Construction",
+    "location": "Delhi - Dwarka Sector 21",
+    "status": "ongoing",
+    "progress": 42,
+    "startDate": "2025-06-01",
+    "expectedEnd": "2027-03-30",
+    "contractor": "Gammon India",
+    "budget": "₹320 Cr"
+  },
+  {
+    "id": "R005",
+    "name": "Village Connectivity Road",
+    "location": "Rajasthan - Jodhpur District",
+    "status": "sanctioned",
+    "progress": 0,
+    "startDate": "2026-07-01",
+    "expectedEnd": "2027-12-31",
+    "contractor": "TBD",
+    "budget": "₹55 Cr"
+  },
+  {
+    "id": "R006",
+    "name": "Coastal Road Project",
+    "location": "Mumbai - Marine Drive to Kandivali",
+    "status": "ongoing",
+    "progress": 78,
+    "startDate": "2024-06-01",
+    "expectedEnd": "2026-05-31",
+    "contractor": "HCC Ltd",
+    "budget": "₹1200 Cr"
+  },
+  {
+    "id": "R007",
+    "name": "IT Corridor Widening",
+    "location": "Hyderabad - HITEC City",
+    "status": "completed",
+    "progress": 100,
+    "startDate": "2024-09-01",
+    "expectedEnd": "2025-11-30",
+    "contractor": "NCC Ltd",
+    "budget": "₹180 Cr"
+  },
+  {
+    "id": "R008",
+    "name": "Metro Feeder Road Network",
+    "location": "Chennai - OMR Stretch",
+    "status": "ongoing",
+    "progress": 30,
+    "startDate": "2025-09-15",
+    "expectedEnd": "2027-06-30",
+    "contractor": "Afcons Infrastructure",
+    "budget": "₹275 Cr"
+  }
+]

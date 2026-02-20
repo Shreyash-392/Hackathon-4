@@ -1,0 +1,108 @@
+[
+  {
+    "id": "e9c74eb9-ba31-4fd2-a887-b63394af893a",
+    "trackingId": "CIV-MLV5V96W-C0D1",
+    "title": "pothole",
+    "description": "pothole everywhere",
+    "category": "Roads",
+    "priority": "medium",
+    "status": "pending",
+    "location": {
+      "lat": 31.252377,
+      "lng": 75.70258237499999,
+      "address": ", ",
+      "state": "",
+      "district": "",
+      "city": "",
+      "landmark": ""
+    },
+    "photo": "/uploads/1771608346939-1dfeb926.jpeg",
+    "votes": 1,
+    "votedIps": [],
+    "department": null,
+    "statusHistory": [
+      {
+        "status": "pending",
+        "timestamp": "2026-02-20T17:25:46.952Z",
+        "note": "Complaint registered successfully"
+      }
+    ],
+    "aiAnalysis": null,
+    "createdAt": "2026-02-20T17:25:46.953Z",
+    "updatedAt": "2026-02-20T19:03:25.554Z"
+  },
+  {
+    "id": "38082950-f129-4e64-9434-eb3ba5ed9367",
+    "trackingId": "CIV-MLV9BPNL-F277",
+    "title": "small pothole",
+    "description": "pothole",
+    "category": "Roads",
+    "priority": "high",
+    "status": "resolved",
+    "location": {
+      "lat": 21.5006421,
+      "lng": 86.919884,
+      "address": "IG Marg, balasore, balasore, odisha - 756003",
+      "state": "odisha",
+      "district": "balasore",
+      "city": "balasore",
+      "landmark": "IG Marg"
+    },
+    "photo": "/uploads/1771614153609-254b853e.jpeg",
+    "votes": 1,
+    "votedIps": [],
+    "department": "Public Works Department (PWD)",
+    "statusHistory": [
+      {
+        "status": "pending",
+        "timestamp": "2026-02-20T19:02:33.633Z",
+        "note": "Complaint registered successfully"
+      },
+      {
+        "status": "pending",
+        "timestamp": "2026-02-20T19:03:51.562Z",
+        "note": "Status updated to pending"
+      },
+      {
+        "status": "resolved",
+        "timestamp": "2026-02-20T19:04:05.469Z",
+        "note": "Status updated to resolved"
+      }
+    ],
+    "aiAnalysis": null,
+    "createdAt": "2026-02-20T19:02:33.633Z",
+    "updatedAt": "2026-02-20T19:04:05.469Z"
+  },
+  {
+    "id": "76d73871-caee-4b00-b42b-d289c3de28e2",
+    "trackingId": "CIV-MLVB1N6T-99E8",
+    "title": "Damaged road",
+    "description": "Damage road in my area",
+    "category": "Roads",
+    "priority": "high",
+    "status": "pending",
+    "location": {
+      "lat": 18.9327876,
+      "lng": 72.8369772,
+      "address": "Andheri east, , Mumbai,  - 400003",
+      "state": "",
+      "district": "Mumbai",
+      "city": "",
+      "landmark": "Andheri east"
+    },
+    "photo": "/uploads/1771617043098-c37c2476.jpeg",
+    "votes": 0,
+    "votedIps": [],
+    "department": null,
+    "statusHistory": [
+      {
+        "status": "pending",
+        "timestamp": "2026-02-20T19:50:43.110Z",
+        "note": "Complaint registered successfully"
+      }
+    ],
+    "aiAnalysis": null,
+    "createdAt": "2026-02-20T19:50:43.110Z",
+    "updatedAt": "2026-02-20T19:50:43.110Z"
+  }
+]
