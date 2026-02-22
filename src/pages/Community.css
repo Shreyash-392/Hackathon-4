@@ -112,6 +112,20 @@
     transform: scale(1.05);
 }
 
+/* photo styling */
+.card-photo {
+    width: 100%;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+}
+.card-photo img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+    max-height: 200px;
+}
+
 /* Empty & Loading */
 .empty-state {
     text-align: center;
