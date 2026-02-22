@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { ThumbsUp, MapPin, Filter, Clock, AlertTriangle, CheckCircle } from 'lucide-react'
-import { apiFetch } from '../components/api'   // ✅ ADDED
 import './Community.css'
 import { apiFetch, getImageUrl } from '../components/api'
 

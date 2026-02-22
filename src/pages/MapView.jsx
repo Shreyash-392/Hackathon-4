@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import { Filter, MapPin, AlertTriangle, ThumbsUp } from 'lucide-react'
 import './MapView.css'
-import { apiFetch } from '../components/api'
+import { apiFetch, getImageUrl } from '../components/api'
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -81,7 +81,7 @@ export default function MapView() {
                                         <span className={`popup-badge status-${c.status}`}>{c.status}</span>
                                     </div>
                                     <p>{c.description?.substring(0, 100)}...</p>
-                                    {c.photo && <img src={c.photo} alt="" className="popup-photo" />}
+                                    {c.photo && <img src={getImageUrl(c.photo)} alt="" className="popup-photo" />}
                                     <div className="popup-footer">
                                         <span><ThumbsUp size={12} /> {c.votes} votes</span>
                                         <span>{c.trackingId}</span>
