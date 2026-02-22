@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { ThumbsUp, MapPin, Filter, Clock, AlertTriangle, CheckCircle } from 'lucide-react'
 import { apiFetch } from '../components/api'   // ✅ ADDED
 import './Community.css'
+import { apiFetch, getImageUrl } from '../components/api'
 
 
 export default function Community() {
@@ -135,7 +136,7 @@ export default function Community() {
                                 {c.photo && (
                                     <div className="card-photo">
                                         <img 
-    src={`${import.meta.env.VITE_API_URL}/${c.photo}`} 
+    src={getImageUrl(c.photo)} 
     alt={c.title} 
     loading="lazy" 
 
