@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { ThumbsUp, MapPin, Filter, Clock, AlertTriangle, CheckCircle } from 'lucide-react'
+import { apiFetch } from '../components/api'   // ✅ ADDED
 import './Community.css'
+
 
 export default function Community() {
     const [complaints, setComplaints] = useState([])
@@ -10,16 +12,20 @@ export default function Community() {
     const fetchComplaints = async () => {
         setLoading(true)
         const params = new URLSearchParams()
+
         if (filters.category !== 'all') params.append('category', filters.category)
         if (filters.status !== 'all') params.append('status', filters.status)
         if (filters.sort === 'votes') params.append('sort', 'votes')
         if (filters.sort === 'priority') params.append('sort', 'priority')
 
         try {
-            const res = await fetch(`/api/complaints?${params}`)
+            const res = await apiFetch(`/api/complaints?${params}`)   // ✅ CHANGED
             const data = await res.json()
             if (data.success) setComplaints(data.complaints)
-        } catch { }
+        } catch (err) {
+            console.error("Fetch complaints error:", err)
+        }
+
         setLoading(false)
     }
 
@@ -27,12 +33,16 @@ export default function Community() {
 
     const handleVote = async (id) => {
         try {
-            const res = await fetch(`/api/complaints/${id}/vote`, { method: 'PUT' })
+            const res = await apiFetch(`/api/complaints/${id}/vote`, { method: 'PUT' })   // ✅ CHANGED
             const data = await res.json()
             if (data.success) {
-                setComplaints(prev => prev.map(c => c.id === id ? { ...c, votes: data.votes } : c))
+                setComplaints(prev =>
+                    prev.map(c => c.id === id ? { ...c, votes: data.votes } : c)
+                )
             }
-        } catch { }
+        } catch (err) {
+            console.error("Vote error:", err)
+        }
     }
 
     const statusIcon = (status) => {
@@ -56,30 +66,45 @@ export default function Community() {
             <div className="container">
                 <div className="page-header">
                     <h1 className="page-title">Community Feed</h1>
-                    <p className="page-subtitle">Browse reported issues and vote on what matters most to your community</p>
+                    <p className="page-subtitle">
+                        Browse reported issues and vote on what matters most to your community
+                    </p>
                 </div>
 
-                {/* Filters */}
                 <div className="filters-bar glass-card animate-fade-in-up">
                     <div className="filter-group">
                         <Filter size={16} />
-                        <select className="filter-select" value={filters.category} onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}>
+                        <select
+                            className="filter-select"
+                            value={filters.category}
+                            onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}
+                        >
                             <option value="all">All Categories</option>
                             {['Roads', 'Water', 'Electricity', 'Sanitation', 'Safety', 'Drainage', 'Streetlights', 'Parks', 'Other'].map(c =>
                                 <option key={c} value={c}>{c}</option>
                             )}
                         </select>
                     </div>
+
                     <div className="filter-group">
-                        <select className="filter-select" value={filters.status} onChange={e => setFilters(f => ({ ...f, status: e.target.value }))}>
+                        <select
+                            className="filter-select"
+                            value={filters.status}
+                            onChange={e => setFilters(f => ({ ...f, status: e.target.value }))}
+                        >
                             <option value="all">All Status</option>
                             <option value="pending">Pending</option>
                             <option value="in-progress">In Progress</option>
                             <option value="resolved">Resolved</option>
                         </select>
                     </div>
+
                     <div className="filter-group">
-                        <select className="filter-select" value={filters.sort} onChange={e => setFilters(f => ({ ...f, sort: e.target.value }))}>
+                        <select
+                            className="filter-select"
+                            value={filters.sort}
+                            onChange={e => setFilters(f => ({ ...f, sort: e.target.value }))}
+                        >
                             <option value="recent">Most Recent</option>
                             <option value="votes">Most Votes</option>
                             <option value="priority">Highest Priority</option>
@@ -87,7 +112,6 @@ export default function Community() {
                     </div>
                 </div>
 
-                {/* Complaint Cards */}
                 {loading ? (
                     <div className="loading-state">
                         {[1, 2, 3, 4, 5, 6].map(i => (
@@ -103,12 +127,22 @@ export default function Community() {
                 ) : (
                     <div className="community-grid">
                         {complaints.map((c, i) => (
-                            <div key={c.id} className="community-card glass-card animate-fade-in-up" style={{ animationDelay: `${i * 0.05}s` }}>
+                            <div
+                                key={c.id}
+                                className="community-card glass-card animate-fade-in-up"
+                                style={{ animationDelay: `${i * 0.05}s` }}
+                            >
                                 {c.photo && (
                                     <div className="card-photo">
-                                        <img src={c.photo} alt={c.title} loading="lazy" />
+                                        <img 
+    src={`${import.meta.env.VITE_API_URL}/${c.photo}`} 
+    alt={c.title} 
+    loading="lazy" 
+
+/>
                                     </div>
                                 )}
+
                                 <div className="card-body">
                                     <div className="card-badges">
                                         <span className={`badge badge-${c.priority}`}>{c.priority}</span>
@@ -118,12 +152,23 @@ export default function Community() {
                                             {c.status}
                                         </span>
                                     </div>
+
                                     <h3 className="card-title">{c.title}</h3>
-                                    <p className="card-desc">{c.description?.substring(0, 120)}{c.description?.length > 120 ? '...' : ''}</p>
+                                    <p className="card-desc">
+                                        {c.description?.substring(0, 120)}
+                                        {c.description?.length > 120 ? '...' : ''}
+                                    </p>
+
                                     <div className="card-location">
                                         <MapPin size={14} />
-                                        <span>{c.location?.address || c.location?.city || c.location?.landmark || 'Location tagged'}</span>
+                                        <span>
+                                            {c.location?.address ||
+                                                c.location?.city ||
+                                                c.location?.landmark ||
+                                                'Location tagged'}
+                                        </span>
                                     </div>
+
                                     <div className="card-footer">
                                         <span className="card-time">{timeAgo(c.createdAt)}</span>
                                         <button className="vote-btn" onClick={() => handleVote(c.id)}>

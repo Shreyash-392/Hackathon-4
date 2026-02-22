@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { ShieldCheck, Zap, AlertCircle, Activity, ArrowRight } from 'lucide-react'
 import ForceGraph2D from 'react-force-graph-2d'
 import './CivicTrust.css'
+import { apiFetch } from '../components/api'
 
 export default function CivicTrust() {
     const [complaints, setComplaints] = useState([])
@@ -10,7 +11,7 @@ export default function CivicTrust() {
     const containerRef = useRef()
 
     useEffect(() => {
-        fetch('/api/complaints')
+        apiFetch('/api/complaints')
             .then(r => r.json())
             .then(data => {
                 if (data.success) setComplaints(data.complaints)

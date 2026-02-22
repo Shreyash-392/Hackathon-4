@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap } from 'react-leaflet'
 import { Search, MapPin, Navigation, Clock, Activity, AlertTriangle } from 'lucide-react'
 import L from 'leaflet'
+import { apiFetch } from '../components/api'
 import './SmartRoute.css'
 
 // Custom marker icons
@@ -44,7 +45,7 @@ export default function SmartRoute() {
 
     useEffect(() => {
         // Fetch active complaints to show them on the map as alerts
-        fetch('/api/complaints')
+        apiFetch('/api/complaints')
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
@@ -107,7 +108,7 @@ export default function SmartRoute() {
 
             // Trigger wallet update for using the smart route feature
             try {
-                await fetch('/api/user/wallet/add', {
+                await apiFetch('/api/user/wallet/add', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ points: 10 }) // 10 points for using the Smart Route

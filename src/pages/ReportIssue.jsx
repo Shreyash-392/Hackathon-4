@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-lea
 import L from 'leaflet'
 import { Camera, MapPin, Navigation, Send, Copy, CheckCircle, Loader2, Shield, AlertTriangle, Building2, Clock, MessageSquare, Lightbulb, X, Mic } from 'lucide-react'
 import './ReportIssue.css'
+import { apiFetch } from '../components/api'
 
 // Fix leaflet default icon
 delete L.Icon.Default.prototype._getIconUrl
@@ -257,7 +258,7 @@ export default function ReportIssue() {
             formData.append('address', `${form.landmark}, ${form.city}, ${form.district}, ${form.state} - ${form.pincode}`.replace(/(^,\s*|,\s*$)/g, ''))
             formData.append('photo', photo)
 
-            const res = await fetch('/api/complaints', { method: 'POST', body: formData })
+            const res = await apiFetch('/api/complaints', { method: 'POST', body: formData })
             const data = await res.json()
 
             if (data.success) {
@@ -266,7 +267,7 @@ export default function ReportIssue() {
 
                 // Add points to wallet
                 try {
-                    await fetch('/api/user/wallet/add', {
+                    await apiFetch('/api/user/wallet/add', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ points: 50 })
@@ -277,7 +278,7 @@ export default function ReportIssue() {
                 // Run AI analysis
                 setLoadingAI(true)
                 try {
-                    const aiRes = await fetch('/api/analyze', {
+                    const aiRes = await apiFetch('/api/analyze', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -291,7 +292,7 @@ export default function ReportIssue() {
                     const aiData = await aiRes.json()
                     if (aiData.success) {
                         setAiAnalysis(aiData.analysis)
-                        await fetch(`/api/complaints/${data.complaint.id}/analysis`, {
+                        await apiFetch(`/api/complaints/${data.complaint.id}/analysis`, {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ analysis: aiData.analysis })

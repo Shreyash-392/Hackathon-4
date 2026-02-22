@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Search, MapPin, Clock, CheckCircle, AlertTriangle, RefreshCw, Copy, Shield, Loader2, RotateCcw, Wrench } from 'lucide-react'
 import './TrackComplaint.css'
+import { apiFetch } from '../components/api'
 
 const STATUS_CONFIG = {
     pending: { color: 'var(--accent-warning)', label: 'Pending', icon: Clock },
@@ -20,7 +21,7 @@ export default function TrackComplaint() {
     const [contractorsMap, setContractorsMap] = useState({})
 
     useEffect(() => {
-        fetch('/api/contractors')
+        apiFetch('/api/contractors')
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
@@ -39,7 +40,7 @@ export default function TrackComplaint() {
         setError('')
         setComplaint(null)
         try {
-            const res = await fetch(`/api/complaints/track/${trackingId.trim()}`)
+            const res = await apiFetch(`/api/complaints/track/${trackingId.trim()}`)
             const data = await res.json()
             if (data.success) setComplaint(data.complaint)
             else setError('No complaint found with this tracking ID.')
@@ -52,7 +53,7 @@ export default function TrackComplaint() {
     const handleReopen = async () => {
         if (!reopenReason.trim()) return
         try {
-            const res = await fetch(`/api/complaints/${complaint.id}/reopen`, {
+            const res = await apiFetch(`/api/complaints/${complaint.id}/reopen`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ reason: reopenReason })

@@ -8,7 +8,7 @@ router.post('/analyze', async (req, res) => {
         const { title, description, category, priority, location } = req.body;
 
         const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey || apiKey === 'your_gemini_api_key_here') {
+        if (!apiKey || apiKey === 'AIzaSyBbtEbn4j0TUTm3rnpYqjnCVU611PZ3yt8') {
             // Fallback response when no API key
             return res.json({
                 success: true,
@@ -34,7 +34,7 @@ router.post('/analyze', async (req, res) => {
         }
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         const prompt = `You are an expert civic issue analyst. Analyze this civic complaint and provide a structured response.
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { BarChart3, AlertTriangle, CheckCircle, Clock, TrendingUp, Search, RefreshCw, MapPin, Eye, X } from 'lucide-react'
 import './AdminDashboard.css'
+import { apiFetch } from '../components/api'
 
 const DEPARTMENTS = [
     'Public Works Department (PWD)',
@@ -28,9 +29,9 @@ export default function AdminDashboard() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const statsRes = await fetch('/api/complaints/analytics/stats').then(r => r.json()).catch(() => ({ success: false, stats: null }));
-            const complaintsRes = await fetch('/api/complaints').then(r => r.json()).catch(() => ({ success: false, complaints: [] }));
-            const contractorsRes = await fetch('/api/contractors').then(r => r.json()).catch(() => ({ success: false, contractors: [] }));
+            const statsRes = await apiFetch('/api/complaints/analytics/stats').then(r => r.json()).catch(() => ({ success: false, stats: null }));
+            const complaintsRes = await apiFetch('/api/complaints').then(r => r.json()).catch(() => ({ success: false, complaints: [] }));
+            const contractorsRes = await apiFetch('/api/contractors').then(r => r.json()).catch(() => ({ success: false, contractors: [] }));
 
             if (statsRes && statsRes.success) setStats(statsRes.stats);
             if (complaintsRes && complaintsRes.success) setComplaints(complaintsRes.complaints || []);
@@ -54,7 +55,7 @@ export default function AdminDashboard() {
     const handleStatusUpdate = async () => {
         if (!statusUpdate.status) return
         try {
-            const res = await fetch(`/api/complaints/${selectedComplaint.id}/status`, {
+            const res = await apiFetch(`/api/complaints/${selectedComplaint.id}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(statusUpdate)
@@ -71,7 +72,7 @@ export default function AdminDashboard() {
     const handleEvaluate = async () => {
         if (!selectedComplaint || !selectedComplaint.assignedContractorId) return
         try {
-            const res = await fetch(`/api/complaints/${selectedComplaint.id}/evaluate`, {
+            const res = await apiFetch(`/api/complaints/${selectedComplaint.id}/evaluate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ points: Number(evaluatePoints), feedback: evaluateFeedback })

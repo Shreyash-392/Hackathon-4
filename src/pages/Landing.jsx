@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { FileText, Search, Users, MapPin, Shield, ArrowRight, TrendingUp, CheckCircle, Clock, AlertTriangle, Camera, Send, Wrench, ChevronDown, Star, Zap, Eye, Award } from 'lucide-react'
 import './Landing.css'
+import { apiFetch } from '../components/api'
 
 const base = import.meta.env.BASE_URL
 
@@ -67,7 +68,7 @@ export default function Landing() {
 
     useEffect(() => {
         setVisible(true)
-        fetch('/api/complaints/analytics/stats')
+        apiFetch('/api/complaints/analytics/stats')
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
@@ -82,14 +83,14 @@ export default function Landing() {
             })
             .catch(() => { })
 
-        fetch('/api/contractors')
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    setTopContractors(data.contractors.slice(0, 3));
-                }
-            })
-            .catch(() => { })
+        apiFetch('/api/contractors')
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            setTopContractors(data.contractors.slice(0, 3));
+        }
+    })
+    .catch(() => { })
 
         // Intersection observer for steps animation
         const observer = new IntersectionObserver(

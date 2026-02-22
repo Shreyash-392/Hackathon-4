@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Menu, X, Shield, MapPin, FileText, Users, Map, HardHat, LayoutDashboard, Languages, Wallet, ShieldCheck, Navigation } from 'lucide-react'
+import { apiFetch } from './api'
 import './Navbar.css'
 
 const navLinks = [
@@ -22,10 +23,12 @@ export default function Navbar() {
 
     const fetchWallet = async () => {
         try {
-            const res = await fetch('/api/user/wallet')
+            const res = await apiFetch('/api/user/wallet')   // ✅ CHANGED
             const data = await res.json()
             if (data.success) setPoints(data.wallet.points)
-        } catch { }
+        } catch (err) {
+            console.error("Wallet fetch error:", err)
+        }
     }
 
     useEffect(() => {
@@ -34,18 +37,14 @@ export default function Navbar() {
         return () => window.removeEventListener('walletUpdated', fetchWallet)
     }, [])
 
-
-    // Read cookie to check current state
     const isHindi = document.cookie.includes('googtrans=/en/hi')
 
     const toggleLanguage = () => {
         if (isHindi) {
-            // Revert to English
             document.cookie = 'googtrans=/en/en; path=/';
             document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/';
             window.location.reload();
         } else {
-            // Translate to Hindi
             document.cookie = 'googtrans=/en/hi; path=/';
             window.location.reload();
         }
@@ -61,6 +60,7 @@ export default function Navbar() {
                         <span>Solve</span>
                     </div>
                 </Link>
+
                 <div className={`nav-links ${open ? 'active' : ''}`}>
                     {navLinks.map(({ path, label, icon: Icon }) => (
                         <Link
@@ -74,15 +74,46 @@ export default function Navbar() {
                         </Link>
                     ))}
                 </div>
+
                 <div className="nav-actions">
-                    <div className="wallet-badge" title="Your Reward Points to spend on eCommerce" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(234, 179, 8, 0.15)', padding: '6px 12px', borderRadius: '100px', fontWeight: 700, color: '#ca8a04', fontSize: '0.9rem' }}>
+                    <div
+                        className="wallet-badge"
+                        title="Your Reward Points to spend on eCommerce"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            background: 'rgba(234, 179, 8, 0.15)',
+                            padding: '6px 12px',
+                            borderRadius: '100px',
+                            fontWeight: 700,
+                            color: '#ca8a04',
+                            fontSize: '0.9rem'
+                        }}
+                    >
                         <Wallet size={18} />
                         <span>{points} Pts</span>
                     </div>
-                    <button className="lang-toggle-btn" onClick={toggleLanguage} title={isHindi ? "Switch to English" : "Switch to Hindi"} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 600, color: 'var(--text-primary)' }}>
+
+                    <button
+                        className="lang-toggle-btn"
+                        onClick={toggleLanguage}
+                        title={isHindi ? "Switch to English" : "Switch to Hindi"}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            background: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontWeight: 600,
+                            color: 'var(--text-primary)'
+                        }}
+                    >
                         <Languages size={20} style={{ color: 'var(--accent-primary)' }} />
                         <span className="lang-text">{isHindi ? 'English' : 'हिंदी'}</span>
                     </button>
+
                     <button className="nav-toggle" onClick={() => setOpen(!open)}>
                         {open ? <X size={24} /> : <Menu size={24} />}
                     </button>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { HardHat, CheckCircle, Clock, Calendar, DollarSign, MapPin, Building2 } from 'lucide-react'
+import { apiFetch } from '../components/api'   // ✅ ADDED
 import './Roads.css'
 
 export default function Roads() {
@@ -8,18 +9,26 @@ export default function Roads() {
     const [selectedState, setSelectedState] = useState('All States')
     const [loading, setLoading] = useState(true)
 
-    // Extract unique states from the loaded data to populate the dropdown
     const availableStates = ['All States', ...new Set(roads.filter(r => r.state).map(r => r.state))]
-
     const displayedRoads = roads.filter(r => selectedState === 'All States' || r.state === selectedState)
 
     useEffect(() => {
-        const params = activeTab !== 'all' ? `?status=${activeTab}` : ''
-        fetch(`/api/complaints/roads/list${params}`)
-            .then(r => r.json())
-            .then(data => { if (data.success) setRoads(data.roads) })
-            .catch(() => { })
-            .finally(() => setLoading(false))
+        const fetchRoads = async () => {
+            setLoading(true)
+            const params = activeTab !== 'all' ? `?status=${activeTab}` : ''
+
+            try {
+                const res = await apiFetch(`/api/complaints/roads/list${params}`)   // ✅ CHANGED
+                const data = await res.json()
+                if (data.success) setRoads(data.roads)
+            } catch (err) {
+                console.error("Fetch roads error:", err)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchRoads()
     }, [activeTab])
 
     const tabs = [
@@ -40,15 +49,19 @@ export default function Roads() {
             <div className="container">
                 <div className="page-header">
                     <h1 className="page-title">Road Projects</h1>
-                    <p className="page-subtitle">Track sanctioned, ongoing, and completed road construction projects</p>
+                    <p className="page-subtitle">
+                        Track sanctioned, ongoing, and completed road construction projects
+                    </p>
                 </div>
 
-                {/* Filters */}
                 <div className="filters-bar animate-fade-in-up">
                     <div className="tabs-bar">
                         {tabs.map(t => (
-                            <button key={t.key} className={`tab-btn ${activeTab === t.key ? 'active' : ''}`}
-                                onClick={() => setActiveTab(t.key)}>
+                            <button
+                                key={t.key}
+                                className={`tab-btn ${activeTab === t.key ? 'active' : ''}`}
+                                onClick={() => setActiveTab(t.key)}
+                            >
                                 {t.label}
                             </button>
                         ))}
@@ -68,21 +81,29 @@ export default function Roads() {
                     </div>
                 </div>
 
-                {/* Road Cards */}
                 <div className="roads-grid">
                     {displayedRoads.map((road, i) => {
                         const config = statusConfig[road.status] || statusConfig.ongoing
                         const Icon = config.icon
                         return (
-                            <div key={road.id} className="road-card glass-card animate-fade-in-up" style={{ animationDelay: `${i * 0.08}s` }}>
+                            <div
+                                key={road.id}
+                                className="road-card glass-card animate-fade-in-up"
+                                style={{ animationDelay: `${i * 0.08}s` }}
+                            >
                                 <div className="road-header">
-                                    <div className="road-status-badge" style={{ color: config.color, borderColor: config.color }}>
+                                    <div
+                                        className="road-status-badge"
+                                        style={{ color: config.color, borderColor: config.color }}
+                                    >
                                         <Icon size={14} />
                                         {config.label}
                                     </div>
                                     <span className="road-id">{road.id}</span>
                                 </div>
+
                                 <h3 className="road-name">{road.name}</h3>
+
                                 <div className="road-details">
                                     <div className="road-detail">
                                         <MapPin size={14} />
@@ -101,7 +122,7 @@ export default function Roads() {
                                         <span>{road.startDate} → {road.expectedEnd}</span>
                                     </div>
                                 </div>
-                                {/* Progress Bar */}
+
                                 {road.status !== 'sanctioned' && (
                                     <div className="progress-wrapper">
                                         <div className="progress-header">
@@ -109,10 +130,16 @@ export default function Roads() {
                                             <span>{road.progress}%</span>
                                         </div>
                                         <div className="progress-bar">
-                                            <div className="progress-fill" style={{
-                                                width: `${road.progress}%`,
-                                                background: road.progress === 100 ? 'var(--accent-success)' : 'var(--gradient-accent)'
-                                            }}></div>
+                                            <div
+                                                className="progress-fill"
+                                                style={{
+                                                    width: `${road.progress}%`,
+                                                    background:
+                                                        road.progress === 100
+                                                            ? 'var(--accent-success)'
+                                                            : 'var(--gradient-accent)'
+                                                }}
+                                            ></div>
                                         </div>
                                     </div>
                                 )}

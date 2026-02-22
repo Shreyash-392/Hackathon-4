@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import { Filter, MapPin, AlertTriangle, ThumbsUp } from 'lucide-react'
 import './MapView.css'
+import { apiFetch } from '../components/api'
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -31,7 +32,7 @@ export default function MapView() {
     useEffect(() => {
         setLoading(true)
         const params = filter !== 'all' ? `?category=${filter}` : ''
-        fetch(`/api/complaints${params}`)
+        apiFetch(`/api/complaints${params}`)
             .then(r => r.json())
             .then(data => {
                 if (data.success) setComplaints(data.complaints.filter(c => c.location?.lat && c.location?.lng))
