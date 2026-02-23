@@ -274,6 +274,8 @@ router.delete('/:id', (req, res) => {
     const [removed] = complaints.splice(idx, 1);
     writeComplaints(complaints);
 
+    console.log('[complaints] deleted', req.params.id);
+
     // remove associated photo file if it exists and is local
     if (removed.photo && removed.photo.startsWith('/uploads/')) {
         const photoPath = join(__dirname, '..', removed.photo);

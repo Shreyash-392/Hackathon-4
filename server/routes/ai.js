@@ -3,16 +3,21 @@ import Groq from 'groq-sdk';
 
 const router = express.Router();
 
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
+let groq;
+try {
+  groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+} catch (e) {
+  // If no API key is provided the constructor throws; we'll log and fall back later
+  console.warn('Groq client not initialized (missing API key)');
+  groq = null;
+}
 
 router.post('/analyze', async (req, res) => {
   try {
     const { title, description, category, priority, location } = req.body;
 
-    // 🔹 Fallback if no API key
-    if (!process.env.GROQ_API_KEY) {
+    // 🔹 Fallback if no API key or groq client was not initialized
+    if (!process.env.GROQ_API_KEY || !groq) {
       return res.json({
         success: true,
         analysis: buildFallback(title, category, priority, location)

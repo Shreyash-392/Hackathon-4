@@ -33,11 +33,13 @@ router.get('/wallet', (req, res) => {
 router.post('/wallet/add', (req, res) => {
     try {
         const { points } = req.body;
+        console.log('[user] adding points', points);
         const user = readUsers();
         user.points = (user.points || 0) + (points || 0);
         writeUsers(user);
         res.json({ success: true, wallet: { points: user.points } });
     } catch (err) {
+        console.error('[user] wallet add error', err);
         res.status(500).json({ success: false, error: 'Failed to add points' });
     }
 });

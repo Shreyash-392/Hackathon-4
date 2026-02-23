@@ -1,37 +1,5 @@
 [
   {
-    "id": "e9c74eb9-ba31-4fd2-a887-b63394af893a",
-    "trackingId": "CIV-MLV5V96W-C0D1",
-    "title": "pothole",
-    "description": "pothole everywhere",
-    "category": "Roads",
-    "priority": "medium",
-    "status": "pending",
-    "location": {
-      "lat": 31.252377,
-      "lng": 75.70258237499999,
-      "address": ", ",
-      "state": "",
-      "district": "",
-      "city": "",
-      "landmark": ""
-    },
-    "photo": "/uploads/1771608346939-1dfeb926.jpeg",
-    "votes": 1,
-    "votedIps": [],
-    "department": null,
-    "statusHistory": [
-      {
-        "status": "pending",
-        "timestamp": "2026-02-20T17:25:46.952Z",
-        "note": "Complaint registered successfully"
-      }
-    ],
-    "aiAnalysis": null,
-    "createdAt": "2026-02-20T17:25:46.953Z",
-    "updatedAt": "2026-02-20T19:03:25.554Z"
-  },
-  {
     "id": "38082950-f129-4e64-9434-eb3ba5ed9367",
     "trackingId": "CIV-MLV9BPNL-F277",
     "title": "small pothole",
