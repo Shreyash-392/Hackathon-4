@@ -64,8 +64,8 @@ router.post('/', upload.single('photo'), async (req, res) => {
         await complaint.save();
         res.status(201).json({ success: true, complaint, trackingId });
     } catch (err) {
-        console.error('Create complaint error:', err);
-        res.status(500).json({ success: false, error: 'Failed to create complaint' });
+        console.error('Create complaint error:', err.message || err);
+        res.status(500).json({ success: false, error: 'Failed to create complaint', details: err.message || String(err) });
     }
 });
 
