@@ -34,39 +34,44 @@ const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
 const roadsFile = join(__dirname, '..', 'data', 'roads.json');
 
 // CREATE complaint
-router.post('/', upload.single('photo'), async (req, res) => {
-    try {
-        const trackingId = 'CIV-' + Date.now().toString(36).toUpperCase() + '-' + uuidv4().substring(0, 4).toUpperCase();
+router.post('/', (req, res) => {
+    upload.single('photo')(req, res, async function (err) {
+        if (err) {
+            console.error('Multer/Cloudinary Error:', err.message || err);
+            return res.status(500).json({ success: false, error: 'File upload failed', details: err.message || String(err) });
+        }
+        try {
+            const trackingId = 'CIV-' + Date.now().toString(36).toUpperCase() + '-' + uuidv4().substring(0, 4).toUpperCase();
 
-        const complaint = new Complaint({
-            trackingId,
-            title: req.body.title || '',
-            description: req.body.description || '',
-            category: req.body.category || 'Other',
-            priority: req.body.priority || 'medium',
-            status: 'pending',
-            location: {
-                lat: parseFloat(req.body.lat) || 0,
-                lng: parseFloat(req.body.lng) || 0,
-                address: req.body.address || '',
-                state: req.body.state || '',
-                district: req.body.district || '',
-                city: req.body.city || '',
-                landmark: req.body.landmark || '',
-            },
-            // The file url comes from Cloudinary now
-            photo: req.file ? req.file.path : null,
-            statusHistory: [
-                { status: 'pending', note: 'Complaint registered successfully' }
-            ]
-        });
+            const complaint = new Complaint({
+                trackingId,
+                title: req.body.title || '',
+                description: req.body.description || '',
+                category: req.body.category || 'Other',
+                priority: req.body.priority || 'medium',
+                status: 'pending',
+                location: {
+                    lat: parseFloat(req.body.lat) || 0,
+                    lng: parseFloat(req.body.lng) || 0,
+                    address: req.body.address || '',
+                    state: req.body.state || '',
+                    district: req.body.district || '',
+                    city: req.body.city || '',
+                    landmark: req.body.landmark || '',
+                },
+                photo: req.file ? req.file.path : null, // Cloudinary URL
+                statusHistory: [
+                    { status: 'pending', note: 'Complaint registered successfully' }
+                ]
+            });
 
-        await complaint.save();
-        res.status(201).json({ success: true, complaint, trackingId });
-    } catch (err) {
-        console.error('Create complaint error:', err.message || err);
-        res.status(500).json({ success: false, error: 'Failed to create complaint', details: err.message || String(err) });
-    }
+            await complaint.save();
+            res.status(201).json({ success: true, complaint, trackingId });
+        } catch (err) {
+            console.error('Create complaint error (DB):', err.message || err);
+            res.status(500).json({ success: false, error: 'Failed to save complaint to database', details: err.message || String(err) });
+        }
+    });
 });
 
 // GET all complaints (with filters)
