@@ -1,77 +1,44 @@
 import express from 'express';
 import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import fs from 'fs';
+
+import Complaint from '../models/Complaint.js';
+import Contractor from '../models/Contractor.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-
 const router = express.Router();
 
-const dataFile = join(__dirname, '..', 'data', 'complaints.json');
-const roadsFile = join(__dirname, '..', 'data', 'roads.json');
-const contractorsFile = join(__dirname, '..', 'data', 'contractors.json');
+// Cloudinary config
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
-// Multer config
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const dir = join(__dirname, '..', 'uploads');
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        cb(null, dir);
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'civic-resolve-complaints',
+        allowed_formats: ['jpg', 'png', 'jpeg', 'heic'],
     },
-    filename: (req, file, cb) => {
-        const ext = file.originalname.split('.').pop();
-        cb(null, `${Date.now()}-${uuidv4().substring(0, 8)}.${ext}`);
-    }
 });
 const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
 
-// simple in‑memory promise chain used to serialise writes. each
-// write is appended to the queue so that two concurrent POSTs cannot
-// stomp on each other. without this a request that reads the file and
-// then waits for the event loop can write an outdated version, losing
-// the complaint that was written by the other request.
-let _writeQueue = Promise.resolve();
-
-function readComplaints() {
-    try {
-        return JSON.parse(fs.readFileSync(dataFile, 'utf8'));
-    } catch (err) {
-        console.error('[complaints] failed to parse JSON, returning empty array', err.message);
-        // if the file is malformed we don’t want to crash the server; return
-        // whatever we can and let the next successful write repair the file.
-        return [];
-    }
-}
-
-function writeComplaints(data) {
-    // perform an atomic write to avoid truncation if the process is killed
-    // in the middle of the operation. write to a temporary file and rename.
-    const tmp = dataFile + '.tmp';
-    const str = JSON.stringify(data, null, 2);
-
-    _writeQueue = _writeQueue
-        .then(() => {
-            fs.writeFileSync(tmp, str, 'utf8');
-            fs.renameSync(tmp, dataFile);
-        })
-        .catch(err => {
-            console.error('[complaints] write error:', err);
-        });
-    // return the queue so callers can await if they want
-    return _writeQueue;
-}
+// Roads file (keep this local for now as it's static data)
+const roadsFile = join(__dirname, '..', 'data', 'roads.json');
 
 // CREATE complaint
 router.post('/', upload.single('photo'), async (req, res) => {
     try {
-        const complaints = readComplaints();
         const trackingId = 'CIV-' + Date.now().toString(36).toUpperCase() + '-' + uuidv4().substring(0, 4).toUpperCase();
 
-        const complaint = {
-            id: uuidv4(),
+        const complaint = new Complaint({
             trackingId,
             title: req.body.title || '',
             description: req.body.description || '',
@@ -87,28 +54,14 @@ router.post('/', upload.single('photo'), async (req, res) => {
                 city: req.body.city || '',
                 landmark: req.body.landmark || '',
             },
-            photo: req.file ? `/uploads/${req.file.filename}` : null,
-            votes: 0,
-            votedIps: [],
-            department: null,
-            assignedContractorId: null,
-            assignedAt: null,
-            evaluatingDepartment: null,
+            // The file url comes from Cloudinary now
+            photo: req.file ? req.file.path : null,
             statusHistory: [
-                { status: 'pending', timestamp: new Date().toISOString(), note: 'Complaint registered successfully' }
-            ],
-            aiAnalysis: null,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-        };
+                { status: 'pending', note: 'Complaint registered successfully' }
+            ]
+        });
 
-        complaints.push(complaint);
-        // make sure the new data really lands on disk before we respond.
-        // writeComplaints now returns a promise because it serialises the
-        // underlying fs calls – awaiting it prevents a subsequent POST from
-        // racing ahead and overwriting this complaint.
-        await writeComplaints(complaints);
-
+        await complaint.save();
         res.status(201).json({ success: true, complaint, trackingId });
     } catch (err) {
         console.error('Create complaint error:', err);
@@ -117,32 +70,40 @@ router.post('/', upload.single('photo'), async (req, res) => {
 });
 
 // GET all complaints (with filters)
-router.get('/', (req, res) => {
-    // always return fresh data, don’t let the browser or any proxy cache
+router.get('/', async (req, res) => {
     res.set('Cache-Control', 'no-store');
     try {
-        let complaints = readComplaints();
         const { category, status, priority, search, sort } = req.query;
+        let query = {};
 
-        if (category && category !== 'all') complaints = complaints.filter(c => c.category === category);
-        if (status && status !== 'all') complaints = complaints.filter(c => c.status === status);
-        if (priority && priority !== 'all') complaints = complaints.filter(c => c.priority === priority);
+        if (category && category !== 'all') query.category = category;
+        if (status && status !== 'all') query.status = status;
+        if (priority && priority !== 'all') query.priority = priority;
         if (search) {
-            const s = search.toLowerCase();
-            complaints = complaints.filter(c =>
-                c.title.toLowerCase().includes(s) ||
-                c.description.toLowerCase().includes(s) ||
-                c.location.address.toLowerCase().includes(s) ||
-                c.trackingId.toLowerCase().includes(s)
-            );
+            const s = new RegExp(search, 'i');
+            query.$or = [
+                { title: s },
+                { description: s },
+                { 'location.address': s },
+                { trackingId: s }
+            ];
         }
 
-        if (sort === 'votes') complaints.sort((a, b) => b.votes - a.votes);
+        let sortOption = { createdAt: -1 }; // default newest
+        if (sort === 'votes') sortOption = { votes: -1 };
         else if (sort === 'priority') {
+            // Need to sort by high, medium, low. In mongo, it's easier to fetch and sort or use aggregation, 
+            // but for simplicity, let's fetch, sort in memory if needed. Priority is rare.
+            sortOption = { priority: 1, createdAt: -1 }; // Alphabetical: high, low, medium - wait not ideal.
+        }
+
+        let complaints = await Complaint.find(query).sort(sortOption).lean();
+
+        // Fix priority sort in memory since it's an enum
+        if (sort === 'priority') {
             const p = { high: 3, medium: 2, low: 1 };
             complaints.sort((a, b) => (p[b.priority] || 0) - (p[a.priority] || 0));
         }
-        else complaints.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
         res.json({ success: true, complaints, total: complaints.length });
     } catch (err) {
@@ -151,35 +112,42 @@ router.get('/', (req, res) => {
 });
 
 // GET single complaint by tracking ID
-router.get('/track/:trackingId', (req, res) => {
-    const complaints = readComplaints();
-    const complaint = complaints.find(c => c.trackingId === req.params.trackingId);
-    if (!complaint) return res.status(404).json({ success: false, error: 'Complaint not found' });
-    res.json({ success: true, complaint });
+router.get('/track/:trackingId', async (req, res) => {
+    try {
+        const complaint = await Complaint.findOne({ trackingId: req.params.trackingId }).lean();
+        if (!complaint) return res.status(404).json({ success: false, error: 'Complaint not found' });
+        res.json({ success: true, complaint });
+    } catch (err) {
+        res.status(500).json({ success: false, error: 'Server error' });
+    }
 });
 
 // GET analytics
-router.get('/analytics/stats', (req, res) => {
-    const complaints = readComplaints();
-    const total = complaints.length;
-    const byStatus = { pending: 0, 'in-progress': 0, resolved: 0, reopened: 0 };
-    const byCategory = {};
-    const byPriority = { low: 0, medium: 0, high: 0 };
+router.get('/analytics/stats', async (req, res) => {
+    try {
+        const complaints = await Complaint.find().lean();
+        const total = complaints.length;
+        const byStatus = { pending: 0, 'in-progress': 0, resolved: 0, reopened: 0 };
+        const byCategory = {};
+        const byPriority = { low: 0, medium: 0, high: 0 };
 
-    complaints.forEach(c => {
-        byStatus[c.status] = (byStatus[c.status] || 0) + 1;
-        byCategory[c.category] = (byCategory[c.category] || 0) + 1;
-        byPriority[c.priority] = (byPriority[c.priority] || 0) + 1;
-    });
+        complaints.forEach(c => {
+            byStatus[c.status] = (byStatus[c.status] || 0) + 1;
+            byCategory[c.category] = (byCategory[c.category] || 0) + 1;
+            byPriority[c.priority] = (byPriority[c.priority] || 0) + 1;
+        });
 
-    const hotspots = complaints
-        .filter(c => c.location.lat && c.location.lng)
-        .map(c => ({ lat: c.location.lat, lng: c.location.lng, title: c.title, category: c.category }));
+        const hotspots = complaints
+            .filter(c => c.location.lat && c.location.lng)
+            .map(c => ({ lat: c.location.lat, lng: c.location.lng, title: c.title, category: c.category }));
 
-    res.json({ success: true, stats: { total, byStatus, byCategory, byPriority, hotspots } });
+        res.json({ success: true, stats: { total, byStatus, byCategory, byPriority, hotspots } });
+    } catch (err) {
+        res.status(500).json({ success: false, error: 'Server error' });
+    }
 });
 
-// GET roads
+// GET roads (static json data)
 router.get('/roads/list', (req, res) => {
     try {
         const roads = JSON.parse(fs.readFileSync(roadsFile, 'utf8'));
@@ -194,145 +162,146 @@ router.get('/roads/list', (req, res) => {
 });
 
 // VOTE on a complaint
-router.put('/:id/vote', (req, res) => {
-    const complaints = readComplaints();
-    const idx = complaints.findIndex(c => c.id === req.params.id);
-    if (idx === -1) return res.status(404).json({ success: false, error: 'Not found' });
-
-    complaints[idx].votes += 1;
-    complaints[idx].updatedAt = new Date().toISOString();
-    writeComplaints(complaints);
-    res.json({ success: true, votes: complaints[idx].votes });
+router.put('/:id/vote', async (req, res) => {
+    try {
+        const complaint = await Complaint.findByIdAndUpdate(
+            req.params.id,
+            { $inc: { votes: 1 } },
+            { new: true }
+        );
+        if (!complaint) return res.status(404).json({ success: false, error: 'Not found' });
+        res.json({ success: true, votes: complaint.votes });
+    } catch (err) {
+        res.status(500).json({ success: false, error: 'Server error' });
+    }
 });
 
 // UPDATE status (admin)
-router.put('/:id/status', (req, res) => {
-    const complaints = readComplaints();
-    const idx = complaints.findIndex(c => c.id === req.params.id);
-    if (idx === -1) return res.status(404).json({ success: false, error: 'Not found' });
+router.put('/:id/status', async (req, res) => {
+    try {
+        const { status, note, department, contractorId, evaluatingDepartment } = req.body;
 
-    const { status, note, department, contractorId, evaluatingDepartment } = req.body;
-    complaints[idx].status = status;
-    if (department) complaints[idx].department = department;
+        let updateData = { status };
+        if (department) updateData.department = department;
+        if (contractorId) {
+            updateData.assignedContractorId = contractorId;
+            updateData.assignedAt = new Date();
+        }
+        if (evaluatingDepartment) {
+            updateData.evaluatingDepartment = evaluatingDepartment;
+        }
 
-    // Assignment logic
-    if (contractorId) {
-        complaints[idx].assignedContractorId = contractorId;
-        complaints[idx].assignedAt = new Date().toISOString();
+        const complaint = await Complaint.findByIdAndUpdate(
+            req.params.id,
+            {
+                $set: updateData,
+                $push: {
+                    statusHistory: {
+                        status,
+                        note: note || `Status updated to ${status}`
+                    }
+                }
+            },
+            { new: true }
+        );
+
+        if (!complaint) return res.status(404).json({ success: false, error: 'Not found' });
+        res.json({ success: true, complaint });
+    } catch (err) {
+        res.status(500).json({ success: false, error: 'Server error' });
     }
-    if (evaluatingDepartment) {
-        complaints[idx].evaluatingDepartment = evaluatingDepartment;
-    }
-
-    complaints[idx].statusHistory.push({
-        status,
-        timestamp: new Date().toISOString(),
-        note: note || `Status updated to ${status}`
-    });
-    complaints[idx].updatedAt = new Date().toISOString();
-    writeComplaints(complaints);
-    res.json({ success: true, complaint: complaints[idx] });
 });
 
 // EVALUATE contractor (admin)
-router.post('/:id/evaluate', (req, res) => {
-    const complaints = readComplaints();
-    const idx = complaints.findIndex(c => c.id === req.params.id);
-    if (idx === -1) return res.status(404).json({ success: false, error: 'Complaint Not found' });
-
-    const complaint = complaints[idx];
-    if (!complaint.assignedContractorId) return res.status(400).json({ success: false, error: 'No contractor assigned' });
-
-    const { points, feedback } = req.body;
-
-    // Update Contractor
-    let contractors = [];
+router.post('/:id/evaluate', async (req, res) => {
     try {
-        contractors = JSON.parse(fs.readFileSync(contractorsFile, 'utf8'));
-    } catch { contractors = []; }
+        const { points, feedback } = req.body;
 
-    const cIdx = contractors.findIndex(c => c.id === complaint.assignedContractorId);
-    if (cIdx !== -1) {
-        contractors[cIdx].points += (points || 0);
-        contractors[cIdx].totalWorks += 1;
-        fs.writeFileSync(contractorsFile, JSON.stringify(contractors, null, 2));
+        const complaint = await Complaint.findById(req.params.id);
+        if (!complaint) return res.status(404).json({ success: false, error: 'Complaint Not found' });
+        if (!complaint.assignedContractorId) return res.status(400).json({ success: false, error: 'No contractor assigned' });
+
+        // Update Contractor
+        await Contractor.findOneAndUpdate(
+            { id: complaint.assignedContractorId },
+            {
+                $inc: { points: (points || 0), totalWorks: 1 }
+            }
+        );
+
+        // Mark evaluated on complaint
+        complaint.statusHistory.push({
+            status: 'evaluated',
+            note: `Contractor Evaluated. Feedback: ${feedback || 'None'} (${points > 0 ? '+' + points : points} pts)`
+        });
+        await complaint.save();
+
+        res.json({ success: true, complaint });
+    } catch (err) {
+        res.status(500).json({ success: false, error: 'Server error' });
     }
-
-    // Mark evaluated on complaint
-    complaint.statusHistory.push({
-        status: 'evaluated',
-        timestamp: new Date().toISOString(),
-        note: `Contractor Evaluated. Feedback: ${feedback || 'None'} (${points > 0 ? '+' + points : points} pts)`
-    });
-    writeComplaints(complaints);
-    res.json({ success: true, complaint });
 });
 
 // REOPEN complaint
-router.put('/:id/reopen', (req, res) => {
-    const complaints = readComplaints();
-    const idx = complaints.findIndex(c => c.id === req.params.id);
-    if (idx === -1) return res.status(404).json({ success: false, error: 'Not found' });
-
-    complaints[idx].status = 'reopened';
-    complaints[idx].statusHistory.push({
-        status: 'reopened',
-        timestamp: new Date().toISOString(),
-        note: req.body.reason || 'Complaint reopened by citizen'
-    });
-    complaints[idx].updatedAt = new Date().toISOString();
-    writeComplaints(complaints);
-    res.json({ success: true, complaint: complaints[idx] });
+router.put('/:id/reopen', async (req, res) => {
+    try {
+        const complaint = await Complaint.findByIdAndUpdate(
+            req.params.id,
+            {
+                $set: { status: 'reopened' },
+                $push: {
+                    statusHistory: {
+                        status: 'reopened',
+                        note: req.body.reason || 'Complaint reopened by citizen'
+                    }
+                }
+            },
+            { new: true }
+        );
+        if (!complaint) return res.status(404).json({ success: false, error: 'Not found' });
+        res.json({ success: true, complaint });
+    } catch (err) {
+        res.status(500).json({ success: false, error: 'Server error' });
+    }
 });
 
 // SAVE AI analysis to complaint
-router.put('/:id/analysis', (req, res) => {
-    const complaints = readComplaints();
-    const idx = complaints.findIndex(c => c.id === req.params.id);
-    if (idx === -1) return res.status(404).json({ success: false, error: 'Not found' });
-
-    complaints[idx].aiAnalysis = req.body.analysis;
-    complaints[idx].updatedAt = new Date().toISOString();
-    writeComplaints(complaints);
-    res.json({ success: true, complaint: complaints[idx] });
+router.put('/:id/analysis', async (req, res) => {
+    try {
+        const complaint = await Complaint.findByIdAndUpdate(
+            req.params.id,
+            { $set: { aiAnalysis: req.body.analysis } },
+            { new: true }
+        );
+        if (!complaint) return res.status(404).json({ success: false, error: 'Not found' });
+        res.json({ success: true, complaint });
+    } catch (err) {
+        res.status(500).json({ success: false, error: 'Server error' });
+    }
 });
 
 // DELETE complaint by id
-router.delete('/:id', (req, res) => {
-    const complaints = readComplaints();
-    const idx = complaints.findIndex(c => c.id === req.params.id);
-    if (idx === -1) return res.status(404).json({ success: false, error: 'Not found' });
-
-    const [removed] = complaints.splice(idx, 1);
-    writeComplaints(complaints);
-
-    console.log('[complaints] deleted', req.params.id);
-
-    // remove associated photo file if it exists and is local
-    if (removed.photo && removed.photo.startsWith('/uploads/')) {
-        const photoPath = join(__dirname, '..', removed.photo);
-        fs.unlink(photoPath, err => { /* ignore error */ });
+router.delete('/:id', async (req, res) => {
+    try {
+        const complaint = await Complaint.findByIdAndDelete(req.params.id);
+        if (!complaint) return res.status(404).json({ success: false, error: 'Not found' });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ success: false, error: 'Server error' });
     }
-
-    res.json({ success: true });
 });
 
 // (dev helper) remove the most recently created complaint
-router.delete('/latest', (req, res) => {
-    let complaints = readComplaints();
-    if (complaints.length === 0) return res.json({ success: false, error: 'No complaints' });
+router.delete('/latest', async (req, res) => {
+    try {
+        const latest = await Complaint.findOne().sort({ createdAt: -1 });
+        if (!latest) return res.json({ success: false, error: 'No complaints' });
 
-    // find by createdAt newest
-    complaints.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    const removed = complaints.shift();
-    writeComplaints(complaints);
-
-    if (removed.photo && removed.photo.startsWith('/uploads/')) {
-        const photoPath = join(__dirname, '..', removed.photo);
-        fs.unlink(photoPath, () => {});
+        await Complaint.findByIdAndDelete(latest._id);
+        res.json({ success: true, removed: latest });
+    } catch (err) {
+        res.status(500).json({ success: false, error: 'Server error' });
     }
-
-    res.json({ success: true, removed });
 });
 
 export default router;

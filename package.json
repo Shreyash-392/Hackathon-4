@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
+    "cloudinary": "^1.41.3",
     "concurrently": "^9.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -19,7 +20,9 @@
     "groq-sdk": "^0.37.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.460.0",
+    "mongoose": "^9.2.2",
     "multer": "^1.4.5-lts.1",
+    "multer-storage-cloudinary": "^4.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-force-graph-2d": "^1.29.1",
