@@ -266,11 +266,18 @@ export default function ReportIssue() {
                 setSubmitting(false)
 
                 // Add points to wallet
+
+                // Generate or get userId from localStorage
+                let userId = localStorage.getItem('userId');
+                if (!userId) {
+                    userId = 'user-' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem('userId', userId);
+                }
                 try {
                     await apiFetch('/api/user/wallet/add', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ points: 50 })
+                        body: JSON.stringify({ userId, points: 50 })
                     })
                     window.dispatchEvent(new Event('walletUpdated'))
                 } catch (e) { console.error('Wallet error', e) }

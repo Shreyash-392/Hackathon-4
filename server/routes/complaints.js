@@ -28,18 +28,44 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
 
+// simple in‑memory promise chain used to serialise writes. each
+// write is appended to the queue so that two concurrent POSTs cannot
+// stomp on each other. without this a request that reads the file and
+// then waits for the event loop can write an outdated version, losing
+// the complaint that was written by the other request.
+let _writeQueue = Promise.resolve();
+
 function readComplaints() {
     try {
         return JSON.parse(fs.readFileSync(dataFile, 'utf8'));
-    } catch { return []; }
+    } catch (err) {
+        console.error('[complaints] failed to parse JSON, returning empty array', err.message);
+        // if the file is malformed we don’t want to crash the server; return
+        // whatever we can and let the next successful write repair the file.
+        return [];
+    }
 }
 
 function writeComplaints(data) {
-    fs.writeFileSync(dataFile, JSON.stringify(data, null, 2));
+    // perform an atomic write to avoid truncation if the process is killed
+    // in the middle of the operation. write to a temporary file and rename.
+    const tmp = dataFile + '.tmp';
+    const str = JSON.stringify(data, null, 2);
+
+    _writeQueue = _writeQueue
+        .then(() => {
+            fs.writeFileSync(tmp, str, 'utf8');
+            fs.renameSync(tmp, dataFile);
+        })
+        .catch(err => {
+            console.error('[complaints] write error:', err);
+        });
+    // return the queue so callers can await if they want
+    return _writeQueue;
 }
 
 // CREATE complaint
-router.post('/', upload.single('photo'), (req, res) => {
+router.post('/', upload.single('photo'), async (req, res) => {
     try {
         const complaints = readComplaints();
         const trackingId = 'CIV-' + Date.now().toString(36).toUpperCase() + '-' + uuidv4().substring(0, 4).toUpperCase();
@@ -77,7 +103,11 @@ router.post('/', upload.single('photo'), (req, res) => {
         };
 
         complaints.push(complaint);
-        writeComplaints(complaints);
+        // make sure the new data really lands on disk before we respond.
+        // writeComplaints now returns a promise because it serialises the
+        // underlying fs calls – awaiting it prevents a subsequent POST from
+        // racing ahead and overwriting this complaint.
+        await writeComplaints(complaints);
 
         res.status(201).json({ success: true, complaint, trackingId });
     } catch (err) {
@@ -88,6 +118,8 @@ router.post('/', upload.single('photo'), (req, res) => {
 
 // GET all complaints (with filters)
 router.get('/', (req, res) => {
+    // always return fresh data, don’t let the browser or any proxy cache
+    res.set('Cache-Control', 'no-store');
     try {
         let complaints = readComplaints();
         const { category, status, priority, search, sort } = req.query;

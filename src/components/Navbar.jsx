@@ -21,9 +21,21 @@ export default function Navbar() {
     const [points, setPoints] = useState(0)
     const location = useLocation()
 
+
+    // Generate or get userId from localStorage
+    function getUserId() {
+        let userId = localStorage.getItem('userId');
+        if (!userId) {
+            userId = 'user-' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('userId', userId);
+        }
+        return userId;
+    }
+
     const fetchWallet = async () => {
         try {
-            const res = await apiFetch('/api/user/wallet')   // ✅ CHANGED
+            const userId = getUserId();
+            const res = await apiFetch(`/api/user/wallet?userId=${userId}`)
             const data = await res.json()
             if (data.success) setPoints(data.wallet.points)
         } catch (err) {
