@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { Camera, MapPin, Navigation, Send, Copy, CheckCircle, Loader2, Shield, AlertTriangle, Building2, Clock, MessageSquare, Lightbulb, X, Mic } from 'lucide-react'
@@ -106,6 +107,7 @@ function MapCenterUpdater({ center, zoom }) {
 }
 
 export default function ReportIssue() {
+    const navigate = useNavigate();
     const [form, setForm] = useState({
         title: '', description: '', category: 'Roads', priority: 'medium',
         state: '', district: '', city: '', landmark: '', pincode: '',
@@ -266,8 +268,6 @@ export default function ReportIssue() {
                 setSubmitting(false)
 
                 // Add points to wallet
-
-                // Generate or get userId from localStorage
                 let userId = localStorage.getItem('userId');
                 if (!userId) {
                     userId = 'user-' + Math.random().toString(36).substr(2, 9);
@@ -282,31 +282,15 @@ export default function ReportIssue() {
                     window.dispatchEvent(new Event('walletUpdated'))
                 } catch (e) { console.error('Wallet error', e) }
 
-                // Run AI analysis
-                setLoadingAI(true)
-                try {
-                    const aiRes = await apiFetch('/api/analyze', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            title: form.title,
-                            description: form.description,
-                            category: form.category,
-                            priority: form.priority,
-                            location: `${form.landmark}, ${form.city}, ${form.district}, ${form.state}`
-                        })
-                    })
-                    const aiData = await aiRes.json()
-                    if (aiData.success) {
-                        setAiAnalysis(aiData.analysis)
-                        await apiFetch(`/api/complaints/${data.complaint.id}/analysis`, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ analysis: aiData.analysis })
-                        })
-                    }
-                } catch { }
-                setLoadingAI(false)
+                // Run AI analysis (optional, can be kept or skipped for instant redirect)
+                // setLoadingAI(true)
+                // ... (AI analysis code can be kept if you want to show the result before redirect)
+                // setLoadingAI(false)
+
+                // Redirect to Community page after short delay for better UX
+                setTimeout(() => {
+                    navigate('/community');
+                }, 1200); // 1.2s delay to show success message
             }
         } catch (err) {
             alert('Failed to submit. Please try again.')
