@@ -25,7 +25,7 @@ export default function AdminDashboard() {
     const [evaluatePoints, setEvaluatePoints] = useState(50)
     const [evaluateFeedback, setEvaluateFeedback] = useState('')
     const [loading, setLoading] = useState(true)
-    
+
     const handleDeleteComplaint = async (id) => {
         if (!window.confirm('Are you sure you want to delete this complaint?')) return;
         try {
@@ -33,7 +33,7 @@ export default function AdminDashboard() {
             const data = await res.json();
             if (data.success) {
                 fetchData();
-                if (selectedComplaint && selectedComplaint.id === id) setSelectedComplaint(null);
+                if (selectedComplaint && selectedComplaint._id === id) setSelectedComplaint(null);
             }
         } catch (err) {
             console.error('Delete error', err);
@@ -69,7 +69,7 @@ export default function AdminDashboard() {
     const handleStatusUpdate = async () => {
         if (!statusUpdate.status) return
         try {
-            const res = await apiFetch(`/api/complaints/${selectedComplaint.id}/status`, {
+            const res = await apiFetch(`/api/complaints/${selectedComplaint._id}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(statusUpdate)
@@ -86,7 +86,7 @@ export default function AdminDashboard() {
     const handleEvaluate = async () => {
         if (!selectedComplaint || !selectedComplaint.assignedContractorId) return
         try {
-            const res = await apiFetch(`/api/complaints/${selectedComplaint.id}/evaluate`, {
+            const res = await apiFetch(`/api/complaints/${selectedComplaint._id}/evaluate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ points: Number(evaluatePoints), feedback: evaluateFeedback })
@@ -205,7 +205,7 @@ export default function AdminDashboard() {
                             <div className="table-empty">No complaints found.</div>
                         ) : (
                             filteredComplaints.map(c => (
-                                <div key={c.id} className="table-row">
+                                <div key={c._id} className="table-row">
                                     <span className="table-id">{c.trackingId}</span>
                                     <span className="table-title">{c.title}</span>
                                     <span><span className="badge badge-category">{c.category}</span></span>
@@ -220,7 +220,7 @@ export default function AdminDashboard() {
                                         <button className="btn btn-secondary btn-sm" onClick={() => { setSelectedComplaint(c); setStatusUpdate({ status: c.status, note: '', department: c.department || '', contractorId: '', evaluatingDepartment: '' }) }}>
                                             <Eye size={14} /> View
                                         </button>
-                                        <button className="btn btn-danger btn-sm" onClick={() => handleDeleteComplaint(c.id)}>
+                                        <button className="btn btn-danger btn-sm" onClick={() => handleDeleteComplaint(c._id)}>
                                             <X size={14} />
                                         </button>
                                     </span>
@@ -235,7 +235,7 @@ export default function AdminDashboard() {
                     <div className="modal-overlay" onClick={() => setSelectedComplaint(null)}>
                         <div className="modal-content glass-card animate-fade-in-up" onClick={e => e.stopPropagation()}>
                             <button className="modal-close" onClick={() => setSelectedComplaint(null)}><X size={20} /></button>
-                            <button className="btn btn-danger" style={{ position: 'absolute', top: '16px', right: '48px' }} onClick={() => handleDeleteComplaint(selectedComplaint.id)}>
+                            <button className="btn btn-danger" style={{ position: 'absolute', top: '16px', right: '48px' }} onClick={() => handleDeleteComplaint(selectedComplaint._id)}>
                                 Delete Complaint
                             </button>
                             <h2>{selectedComplaint.title}</h2>
