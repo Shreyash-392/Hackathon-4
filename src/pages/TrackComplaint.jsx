@@ -33,22 +33,33 @@ export default function TrackComplaint() {
             .catch(() => { })
     }, [])
 
-    const handleTrack = async (e) => {
-        e.preventDefault()
+    const handleTrack = async (e, showLoading = true) => {
+        if (e) e.preventDefault()
         if (!trackingId.trim()) return
-        setLoading(true)
-        setError('')
-        setComplaint(null)
+        if (showLoading) setLoading(true)
+        if (showLoading) setError('')
+        if (showLoading) setComplaint(null)
         try {
             const res = await apiFetch(`/api/complaints/track/${trackingId.trim()}`)
             const data = await res.json()
             if (data.success) setComplaint(data.complaint)
-            else setError('No complaint found with this tracking ID.')
+            else if (showLoading) setError('No complaint found with this tracking ID.')
         } catch {
-            setError('Failed to fetch. Please try again.')
+            if (showLoading) setError('Failed to fetch. Please try again.')
         }
-        setLoading(false)
+        if (showLoading) setLoading(false)
     }
+
+    useEffect(() => {
+        if (!complaint) return;
+        const interval = setInterval(() => handleTrack(null, false), 15000);
+        const handleFocus = () => handleTrack(null, false);
+        window.addEventListener('focus', handleFocus);
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('focus', handleFocus);
+        };
+    }, [complaint?.trackingId, trackingId]);
 
     const handleReopen = async () => {
         if (!reopenReason.trim()) return

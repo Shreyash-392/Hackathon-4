@@ -9,8 +9,8 @@ export default function Community() {
     const [filters, setFilters] = useState({ category: 'all', status: 'all', sort: 'recent' })
     const [loading, setLoading] = useState(true)
 
-    const fetchComplaints = async () => {
-        setLoading(true)
+    const fetchComplaints = async (showLoading = true) => {
+        if (showLoading) setLoading(true)
         const params = new URLSearchParams()
 
         if (filters.category !== 'all') params.append('category', filters.category)
@@ -26,10 +26,24 @@ export default function Community() {
             console.error("Fetch complaints error:", err)
         }
 
-        setLoading(false)
+        if (showLoading) setLoading(false)
     }
 
-    useEffect(() => { fetchComplaints() }, [filters])
+    useEffect(() => {
+        fetchComplaints(true)
+
+        const interval = setInterval(() => {
+            fetchComplaints(false)
+        }, 15000)
+
+        const handleFocus = () => fetchComplaints(false)
+        window.addEventListener('focus', handleFocus)
+
+        return () => {
+            clearInterval(interval)
+            window.removeEventListener('focus', handleFocus)
+        }
+    }, [filters])
 
     const handleVote = async (id) => {
         try {
@@ -37,7 +51,7 @@ export default function Community() {
             const data = await res.json()
             if (data.success) {
                 setComplaints(prev =>
-                    prev.map(c => c.id === id ? { ...c, votes: data.votes } : c)
+                    prev.map(c => (c._id || c.id) === id ? { ...c, votes: data.votes } : c)
                 )
             }
         } catch (err) {
@@ -128,18 +142,18 @@ export default function Community() {
                     <div className="community-grid">
                         {complaints.map((c, i) => (
                             <div
-                                key={c.id}
+                                key={c._id || c.id}
                                 className="community-card glass-card animate-fade-in-up"
                                 style={{ animationDelay: `${i * 0.05}s` }}
                             >
                                 {c.photo && (
                                     <div className="card-photo">
-                                        <img 
-    src={getImageUrl(c.photo)} 
-    alt={c.title} 
-    loading="lazy" 
+                                        <img
+                                            src={getImageUrl(c.photo)}
+                                            alt={c.title}
+                                            loading="lazy"
 
-/>
+                                        />
                                     </div>
                                 )}
 
@@ -171,7 +185,7 @@ export default function Community() {
 
                                     <div className="card-footer">
                                         <span className="card-time">{timeAgo(c.createdAt)}</span>
-                                        <button className="vote-btn" onClick={() => handleVote(c.id)}>
+                                        <button className="vote-btn" onClick={() => handleVote(c._id || c.id)}>
                                             <ThumbsUp size={16} />
                                             <span>{c.votes}</span>
                                         </button>

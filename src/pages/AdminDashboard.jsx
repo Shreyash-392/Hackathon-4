@@ -32,7 +32,7 @@ export default function AdminDashboard() {
             const res = await apiFetch(`/api/complaints/${id}`, { method: 'DELETE' });
             const data = await res.json();
             if (data.success) {
-                fetchData();
+                fetchData(false);
                 if (selectedComplaint && selectedComplaint._id === id) setSelectedComplaint(null);
             }
         } catch (err) {
@@ -40,8 +40,8 @@ export default function AdminDashboard() {
         }
     }
 
-    const fetchData = async () => {
-        setLoading(true);
+    const fetchData = async (showLoading = true) => {
+        if (showLoading) setLoading(true);
         try {
             const statsRes = await apiFetch('/api/complaints/analytics/stats').then(r => r.json()).catch(() => ({ success: false, stats: null }));
             const complaintsRes = await apiFetch('/api/complaints').then(r => r.json()).catch(() => ({ success: false, complaints: [] }));
@@ -51,9 +51,18 @@ export default function AdminDashboard() {
             if (complaintsRes && complaintsRes.success) setComplaints(complaintsRes.complaints || []);
             if (contractorsRes && contractorsRes.success) setContractors(contractorsRes.contractors || []);
         } catch (e) { console.error("Admin fetch error", e) }
-        setLoading(false)
+        if (showLoading) setLoading(false);
     }
-    useEffect(() => { fetchData() }, [])
+    useEffect(() => {
+        fetchData(true);
+        const interval = setInterval(() => fetchData(false), 15000);
+        const handleFocus = () => fetchData(false);
+        window.addEventListener('focus', handleFocus);
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('focus', handleFocus);
+        }
+    }, [])
 
     const filteredComplaints = complaints.filter(c => {
         if (filters.category !== 'all' && c.category !== filters.category) return false
@@ -77,7 +86,7 @@ export default function AdminDashboard() {
             const data = await res.json()
             if (data.success) {
                 setSelectedComplaint(data.complaint)
-                fetchData()
+                fetchData(false)
                 setStatusUpdate({ status: '', note: '', department: '', contractorId: '', evaluatingDepartment: '' })
             }
         } catch { }
@@ -93,7 +102,7 @@ export default function AdminDashboard() {
             })
             const data = await res.json()
             if (data.success) {
-                fetchData()
+                fetchData(false)
                 setSelectedComplaint(data.complaint)
                 setEvaluatePoints(50)
                 setEvaluateFeedback('')
